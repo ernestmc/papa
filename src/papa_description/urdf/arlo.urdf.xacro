@@ -3,6 +3,13 @@
 
   <!-- Macro for ArloBot body. -->
 
+  <!-- original radius 0.0762 original width 0.03175-->
+  <property name="wheel_radius" value="0.0775" />
+  <property name="wheel_width" value="0.0388" />
+  <property name="plate_height" value="0.1085" />
+  <property name="axis_height" value="${wheel_radius - plate_height}" />
+  <property name="wheel_base" value="0.160" />
+
   <property name="base_x" value="0.33" />
   <property name="base_y" value="0.33" />
 
@@ -26,15 +33,19 @@
         </geometry>
         <material name="Green" />
       </visual>
-
     </link>
+
+    <joint name="base_footprint_joint" type="fixed">
+      <origin xyz="0 0 0.10125" rpy="0 0 0" />
+      <parent link="base_footprint"/>
+      <child link="base_link" />
+    </joint>
 
     <link name="base_link">
       <inertial>
         <mass value="2" />
         <origin xyz="0 0 0.0" />
-        <inertia ixx="0.01" ixy="0.0" ixz="0.0"
-          iyy="0.01" iyz="0.0" izz="0.5" />
+        <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.5" />
       </inertial>
 
       <visual>
@@ -53,7 +64,7 @@
       </collision>
     </link>
 
-    <link name="front_caster">
+    <link name="front_caster_link">
       <inertial>
         <mass value="0.001" />
         <origin xyz="0 0 0" />
@@ -76,10 +87,10 @@
     <joint name="front_caster_joint" type="fixed">
       <origin xyz="0.18745 0 -0.00475" rpy="0 0 0" />
       <parent link="base_link" />
-      <child link="front_caster" />
+      <child link="front_caster_link" />
     </joint>
 
-    <link name="rear_caster">
+    <link name="rear_caster_link">
       <inertial>
         <mass value="0.001" />
         <origin xyz="0 0 0" />
@@ -102,89 +113,20 @@
     <joint name="rear_caster_joint" type="fixed">
       <origin xyz="-0.18745 0 -0.00475" rpy="0 0 0" />
       <parent link="base_link" />
-      <child link="rear_caster" />
-    </joint>
-
-    <joint name="base_footprint_joint" type="fixed">
-      <origin xyz="0 0 0.10125" rpy="0 0 0" />
-      <parent link="base_footprint"/>
-      <child link="base_link" />
-    </joint>
-
-    <link name="left_axle_link">
-      <inertial>
-        <origin xyz="0 0 0"/>
-        <mass value="0.01" />
-        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
-          iyy="0.001" iyz="0.0" izz="0.001" />
-      </inertial>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 1.5707 1.5707" />
-        <geometry>
-          <cylinder radius="0.00635" length = "0.00635"/>
-        </geometry>
-        <material name ="light_grey" />
-      </visual>
-
-      <collision>
-        <origin xyz="0 0 0" rpy="0 1.5707 1.5707" />
-        <geometry>
-          <cylinder radius="0.00635" length = "0.00635"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <joint name="left_axle_joint" type="fixed">
-      <origin xyz="0 0.171475 0.0178" rpy="0 0 0"/>
-      <parent link="base_link"/>
-      <child link="left_axle_link"/>
-      <axis xyz="0 1 0"/>
-    </joint>
-
-    <link name="right_axle_link">
-      <inertial>
-        <origin xyz="0 0 0"/>
-        <mass value="0.01" />
-        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
-          iyy="0.001" iyz="0.0" izz="0.001" />
-      </inertial>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 1.5707 1.5707" />
-        <geometry>
-          <cylinder radius="0.00635" length = "0.00635"/>
-        </geometry>
-        <material name ="light_grey" />
-      </visual>
-
-      <collision>
-        <origin xyz="0 0 0" rpy="0 1.5707 1.5707" />
-        <geometry>
-          <cylinder radius="0.00635" length = "0.00635"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <joint name="right_axle_joint" type="fixed">
-      <origin xyz="0 -0.171475 0.0178" rpy="0 0 0"/>
-      <parent link="base_link"/>
-      <child link="right_axle_link"/>
-      <axis xyz="0 1 0"/>
+      <child link="rear_caster_link" />
     </joint>
 
     <link name="left_wheel_link">
       <inertial>
         <origin xyz="0 0 0"/>
         <mass value="0.01" />
-        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
-          iyy="0.001" iyz="0.0" izz="0.001" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001" />
       </inertial>
 
       <visual>
         <origin xyz="0 0 0" rpy="0 1.5707 1.5707" />
         <geometry>
-          <cylinder radius="0.0762" length = "0.03175"/>
+          <cylinder radius="${wheel_radius}" length = "${wheel_width}"/>
         </geometry>
         <material name ="black" />
       </visual>
@@ -192,18 +134,19 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 1.5707 1.5707" />
         <geometry>
-          <cylinder radius="0.0762" length = "0.03175"/>
+          <cylinder radius="${wheel_radius}" length = "${wheel_width}"/>
         </geometry>
       </collision>
     </link>
 
     <!-- Fixed because we never rotate it anyway, it is just for show -->
     <!-- NOTE This may prevent gazebo from working with this model -->
-    <joint name="left_wheel_joint" type="fixed">
-      <origin xyz="0 0.01905 0" rpy="0 0 0"/>
-      <parent link="left_axle_link"/>
-      <child link="left_wheel_link"/>
+    <joint name="left_wheel_joint" type="continuous">
       <axis xyz="0 1 0"/>
+      <limit effort="10000.0" velocity="2"/>
+      <origin xyz="0 -${wheel_base} ${axis_height}" rpy="0 0 0"/>
+      <parent link="base_link"/>
+      <child link="left_wheel_link"/>
     </joint>
 
     <link name="right_wheel_link">
@@ -230,56 +173,12 @@
       </collision>
     </link>
 
-    <!-- Fixed because we never rotate it anyway, it is just for show -->
-    <!-- NOTE This may prevent gazebo from working with this model -->
-    <joint name="right_wheel_joint" type="fixed">
-      <origin xyz="0 -0.01905 0" rpy="0 0 0"/>
-      <parent link="right_axle_link"/>
-      <child link="right_wheel_link"/>
+    <joint name="right_wheel_joint" type="continuous">
       <axis xyz="0 1 0"/>
+      <limit effort="10000.0" velocity="2"/>
+      <origin xyz="0 ${wheel_base} ${axis_height}" rpy="0 0 0"/>
+      <parent link="base_link"/>
+      <child link="right_wheel_link"/>
     </joint>
-
-    <!-- This pretends to be in the center in order to aid in calculating degrees from multiple sensors on one fake laser scan -->
-    <joint name="ping_array_joint" type="fixed">
-      <origin xyz="0 0 0.03695" rpy="0 0 0" />
-      <parent link="base_link" />
-      <child link="ping_sensor_array" />
-    </joint>
-
-    <link name="ping_sensor_array">
-      <visual>
-        <geometry>
-          <box size="0.0174 0.06 0.0644" />
-        </geometry>
-      </visual>
-      <inertial>
-        <mass value="0.001" />
-        <origin xyz="0 0 0" />
-        <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
-          iyy="0.0001" iyz="0.0"
-          izz="0.0001" />
-      </inertial>
-    </link>
-
-    <joint name="ir_array_joint" type="fixed">
-      <origin xyz="0 0 0.03695" rpy="0 0 0" />
-      <parent link="base_link" />
-      <child link="ir_sensor_array" />
-    </joint>
-
-    <link name="ir_sensor_array">
-      <visual>
-        <geometry>
-          <box size="0.0174 0.06 0.0644" />
-        </geometry>
-      </visual>
-      <inertial>
-        <mass value="0.001" />
-        <origin xyz="0 0 0" />
-        <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
-          iyy="0.0001" iyz="0.0"
-          izz="0.0001" />
-      </inertial>
-    </link>
   </xacro:macro>
 </robot>

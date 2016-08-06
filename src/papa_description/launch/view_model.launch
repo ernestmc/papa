@@ -7,6 +7,9 @@
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="5.0" />
   </node>
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher">
+    <param name="use_gui" type="bool" value="true" />
+  </node>
 <!-- Launch rviz with our favorite config file -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find papa_description)/rviz/view_model.rviz" />
 </launch>
