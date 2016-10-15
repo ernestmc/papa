@@ -1,0 +1,24 @@
+# To run: ansible-playbook -K -k -i <IP de la PI>, deploy.playbook
+
+
+- name: Copy startup script
+  template: src=papa.conf dest=/etc/init/papa.conf
+  become: yes
+
+- name: Create destination directory
+  file: path={{destination}} state=directory owner={{deploy_user}} group={{deploy_user}}
+  become: yes
+
+- name: Copy files to the robot
+  synchronize: src=../src dest={{destination}}
+    # rsync_opts:
+    #   - "--exclude=mbed_nucleo"
+
+- name: Run catkin make
+  shell: source /opt/ros/kinetic/setup.bash && catkin_make install
+  args:
+    executable: /bin/bash
+    chdir: "{{destination}}"
+
+- name: Restart robot software
+  service: name=papa state=restarted

@@ -1,0 +1,6 @@
+- name: Copies software to the robot
+  hosts: all
+
+  remote_user: ubuntu
+  roles:
+    - papa

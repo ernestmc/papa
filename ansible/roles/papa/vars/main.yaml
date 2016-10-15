@@ -1,0 +1,2 @@
+destination: /opt/ws
+deploy_user: ubuntu
