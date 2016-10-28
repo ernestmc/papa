@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(papa_description)
+project(papa_bringup)
 
-find_package(catkin REQUIRED COMPONENTS
-)
+find_package(catkin REQUIRED COMPONENTS)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -15,8 +14,6 @@ catkin_package(
 
 # Mark other files for installation (e.g. launch and bag files, etc.)
 install(DIRECTORY
-  urdf
-  meshes
   launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

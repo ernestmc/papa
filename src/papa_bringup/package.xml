@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <name>papa_bringup</name>
+  <version>0.1.0</version>
+  <description>
+    The papa_description package provides a complete 3D model of the papa for visualization.
+  </description>
+  <license>BSD</license>
+  <!-- <url type="website">http://wiki.ros.org/activitybot</url> -->
+  <author email="info@clubderobotica.com.ar">CDR Fiuba</author>
+  <maintainer email="info@clubderobotica.com.ar">CDR Fiuba</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <run_depend>rosserial</run_depend>
+</package>
