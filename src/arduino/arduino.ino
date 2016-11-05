@@ -11,12 +11,16 @@
 #define BRAKEGND 3
 #define CS_THRESHOLD 100
 
+#define RIGHT_MOTOR 0
+#define LEFT_MOTOR 1
+
+
 /*  VNH2SP30 pin definitions
  xxx[0] controls '1' outputs
  xxx[1] controls '2' outputs */
-int inApin[2] = {7, 4};  // INA: Clockwise input
-int inBpin[2] = {8, 9}; // INB: Counter-clockwise input
-int pwmpin[2] = {5, 6}; // PWM input
+int inApin[2] = {2, 7};  // INA: Clockwise input
+int inBpin[2] = {4, 8}; // INB: Counter-clockwise input
+int pwmpin[2] = {9, 10}; // PWM input
 int cspin[2] = {2, 3}; // CS: Current sense ANALOG input
 int enpin[2] = {0, 1}; // EN: Status of switches output (Analog pin)
 
@@ -84,25 +88,46 @@ void motorGo(uint8_t motor, uint8_t direct, uint8_t pwm)
 }
 
 void messageCb( const geometry_msgs::Twist& cmd_msg) {
-
-  if ( cmd_msg.angular.z == 0 && cmd_msg.linear.x == 0 ) {
-    motorGo(0, BRAKEGND, 0);
-    motorGo(1, BRAKEGND, 0);
+  float rightVel, leftVel;
+  if (abs(cmd_msg.angular.z) < 0.05 && abs(cmd_msg.linear.x) < 0.05) {
+    motorGo(RIGHT_MOTOR, BRAKEGND, 0);
+    motorGo(LEFT_MOTOR, BRAKEGND, 0);
   } else {
-    if ( cmd_msg.angular.z < -0 ) {  // atras
-      motorGo(0, CCW, 1023);
-      motorGo(1, CCW, 1023);
-    } else if ( cmd_msg.angular.z > 0 ) { // adelante
-      motorGo(0, CW, 1023);
-      motorGo(1, CW, 1023);
-    } else if ( cmd_msg.linear.x < 0.0 ) { // derecha
-      motorGo(0, CW, 1023);
-      motorGo(1, CCW, 1023);
-    } else if ( cmd_msg.linear.x > 0.0 ) {   // izquierda
-      motorGo(0, CCW, 1023);
-      motorGo(1, CW, 1023);
+      rightVel = (cmd_msg.linear.x + cmd_msg.angular.z / 2.0) * 100;
+      leftVel = (cmd_msg.linear.x - cmd_msg.angular.z / 2.0) * 100;
+      if (rightVel > 0)
+        motorGo(RIGHT_MOTOR, CW, abs(rightVel));
+       else
+        motorGo(RIGHT_MOTOR, CCW, abs(rightVel));
+      if (leftVel > 0)
+        motorGo(LEFT_MOTOR, CW, abs(leftVel));
+       else
+        motorGo(LEFT_MOTOR, CCW, abs(leftVel));
     }
-  }
+}
+
+void test_adelante(void)
+{
+    motorGo(0, CW, 100);
+    motorGo(1, CW, 100);
+}
+
+void test_atras(void)
+{
+    motorGo(0, CCW, 100);
+    motorGo(1, CCW, 100);
+}
+
+void test_girar_derecha()
+{
+    motorGo(LEFT_MOTOR, CW, 100);
+    motorGo(RIGHT_MOTOR, CCW, 100);  
+}
+
+void test_girar_izquierda()
+{
+    motorGo(LEFT_MOTOR, CCW, 100);
+    motorGo(RIGHT_MOTOR, CW, 100);  
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub_vel("cmd_vel", messageCb );
@@ -124,11 +149,13 @@ long range_time;
 
 void loop()
 {
+  //test_adelante();
+  //test_girar_derecha();
+  
   if ( millis() >= range_time ) {
 
     pub_ping.publish(&ping_msg);
     range_time =  millis() + 50;
   }
   nh.spinOnce();
-
 }
