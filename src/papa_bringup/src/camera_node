@@ -5,31 +5,27 @@ import sys, time
 
 # numpy and scipy
 import numpy as np
-#from scipy.ndimage import filters
 
 # OpenCV
 import cv2
-
-# Ros libraries
-#import roslib
 import rospy
 
 # Publica imagenes de la camara o de un archivo de video
 from sensor_msgs.msg import CompressedImage, Image
 
+
 def main(args):
   rospy.init_node('camera', anonymous=True)
   pub = rospy.Publisher("/compressed_image", CompressedImage, queue_size=10)
+  publish_rate = rospy.get_param('~publish_rate', 24)
   cap = cv2.VideoCapture(0)
   #cap = cv2.VideoCapture("/home/ernesto/Videos/video1.avi")
   cap.set(3, 640/2)
   cap.set(4, 480/2)
-  rate = rospy.Rate(24)
+  rate = rospy.Rate(publish_rate)
   while not rospy.is_shutdown():
     # Capture frame-by-frame
     ret, frame = cap.read()
-    #cv2.imshow("test", frame)
-    #cv2.waitKey(1)
     img = frame
     #### Create CompressedIamge ####
     msg = CompressedImage()
@@ -40,7 +36,10 @@ def main(args):
     rate.sleep()
 
 if __name__ == '__main__':
-    main(sys.argv)
+    try:
+        main(sys.argv)
+    except rospy.ROSInterruptException:
+        pass
 
 
 
