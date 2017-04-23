@@ -6,7 +6,9 @@
     <param name="publish_frequency" type="double" value="5.0" />
   </node>
 
-  <node pkg="rosserial_python" type="serial_node.py" name="rosserial">
+  <node pkg="rosserial_python" type="serial_node.py" name="rosserial" respawn="true" respawn_delay="30">
     <param name="port" value="/dev/ttyACM0"/>
   </node>
+
+  <node pkg="papa_bringup" type="camera_node" name="camera_node" respawn="true" respawn_delay="30" />
 </launch>
