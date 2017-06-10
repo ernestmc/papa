@@ -6,9 +6,23 @@
     <param name="publish_frequency" type="double" value="5.0" />
   </node>
 
-  <node pkg="rosserial_python" type="serial_node.py" name="rosserial" respawn="true" respawn_delay="30">
-    <param name="port" value="/dev/ttyACM0"/>
+  <!-- Bring up supervisor node. If after a given timeout no vels message is received set cmd_vel to zero -->
+  <node pkg="papa_bringup" type="supervisor" name="supervisor" respawn="true" respawn_delay="30">
+    <param name="input_topic" value="cmd_vel" />  	   <!-- Topic from which listen the velocities commands -->
+    <param name="output_topic" value="/arduino/cmd_vel" /> <!-- Topic to whchi it republishes the commands-->
+    <param name="supervisor_rate" value="20" />            <!-- Rate that the supervisor publishes zeros  -->
+    <param name="timeout" value="2.0" />                   <!-- Max time it will wait before publish zeros -->
   </node>
 
-  <node pkg="papa_bringup" type="camera_node" name="camera_node" respawn="true" respawn_delay="30" />
+
+  <!-- Bring up serial interface for the arduino -->
+  <group ns="arduino">
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial" respawn="true" respawn_delay="30">
+      <param name="port" value="/dev/ttyACM0"/>
+    </node>
+  </group>
+
+  <!-- Camera node -->
+  <!-- <node pkg="papa_bringup" type="camera_node" name="camera_node" respawn="true" respawn_delay="30" /> -->
+
 </launch>
