@@ -19,7 +19,6 @@ def main(args):
   pub = rospy.Publisher("/compressed_image", CompressedImage, queue_size=10)
   publish_rate = rospy.get_param('~publish_rate', 24)
   cap = cv2.VideoCapture(0)
-  #cap = cv2.VideoCapture("/home/ernesto/Videos/video1.avi")
   cap.set(3, 640/2)
   cap.set(4, 480/2)
   rate = rospy.Rate(publish_rate)

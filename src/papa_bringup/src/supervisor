@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+"""Supervisor node.
+
+This node will receive all the cmd_vel messages sent to a given topic and
+resend them thouugh another topic. A timeout is defined, if no cmd_vel messages
+are received after that time it will publish zero for all the speeds.
+
+This is implemented as a failsafe in case the robot lost comunication with the
+the control device. If that happens, it will stay in the same place, avoiding
+runaways.
+"""
+
+import numpy as np
+import rospy
+
+from geometry_msgs.msg import Twist
+
+
+class Supervisor:
+
+  def __init__(self):
+
+    _input_topic = rospy.get_param('~input_topic', "cmd_vel")
+    _output_topic = rospy.get_param('~output_topic', "arduino_cmd_vel")
+    _supervisor_rate = rospy.get_param('~supervisor_rate', 20)
+    _timeout = rospy.get_param('~timeout', 2)
+
+    self.cmd_pub = rospy.Publisher(_output_topic, Twist, queue_size=10)
+    self.cmd_sub = rospy.Subscriber(_input_topic, Twist, self.cmd_vel_callback, queue_size=10)
+
+    _rate = rospy.Rate(_supervisor_rate)
+    self.last_time = rospy.get_time()
+
+    # Start failsafe loop
+    while not rospy.is_shutdown():
+      # Get current time
+      _time = rospy.get_time()
+
+      # If no message is received
+      if _time - self.last_time > _timeout:
+        # Generate default message with zero speeds
+        msg = Twist()
+        # Publish message with zeros
+        self.cmd_pub.publish(msg)
+        self.last_time = _time
+
+      _rate.sleep()
+
+  def cmd_vel_callback(self, data):
+    # Update las time message is received
+    self.last_time = rospy.get_time()
+    # Republish the message receives as fast as possible
+    self.cmd_pub.publish(data)
+
+
+if __name__ == '__main__':
+    try:
+        rospy.init_node('supervisor', anonymous=True)
+    	node = Supervisor()
+    except rospy.ROSInterruptException:
+        pass
+
