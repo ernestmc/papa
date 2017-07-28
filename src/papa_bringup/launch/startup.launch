@@ -24,5 +24,12 @@
 
   <!-- Camera node -->
   <!-- <node pkg="papa_bringup" type="camera_node" name="camera_node" respawn="true" respawn_delay="30" /> -->
+  
+  <node pkg="rosserial_python" type="serial_node.py" name="rosserial1" respawn="true" respawn_delay="30">
+    <param name="port" value="/dev/ttyACM1"/>
+  </node>
+
+
+  <node pkg="papa_bringup" type="odom_node" name="odom_node" respawn="true" respawn_delay="30" />
 
 </launch>
