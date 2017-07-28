@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+
+import rospy
+import math
+import numpy as np
+from tf import transformations
+
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
+from rosserial_mbed.msg import wheel_count
+
+# ROS main loop rate in hertz
+RATE = 10
+
+class OdometryNode():
+  PULSES_REVOLUTION = 36
+  RADIANS_PER_PULSE = 2 * math.pi / PULSES_REVOLUTION
+  PULSES_REVOLUTION_X2 = PULSES_REVOLUTION * 2
+  RADIANS_PER_PULSE_X2 = 2 * math.pi / PULSES_REVOLUTION_X2
+  WHEEL_AXIS_DISTANCE = 0.39
+  WHEEL_DIAMETER = 0.16
+
+  def __init__(self):
+    self.rate = rospy.Rate(RATE)
+    self.odom_publisher = rospy.Publisher("/odom", Odometry, queue_size=10)
+    self.right_wheel_subscriber = rospy.Subscriber("/wheel_count", wheel_count, self.wheel_count_cb)
+    self.rate = rospy.Rate(10)
+    self.right_count = 0
+    self.right_delta = 0
+    self.left_count = 0
+    self.left_delta = 0
+    self.pos_accum = 0
+    self.angle_accum = 0
+    self.x = 0
+    self.y = 0
+
+  def run(self):
+    while not rospy.is_shutdown():
+      odom_msg = Odometry()
+      odom_msg.header.stamp = rospy.Time.now()
+      odom_msg.header.frame_id = "map"
+      odom_msg.child_frame_id = "base_link"
+      odom_msg.pose = self.get_pose()
+      odom_msg.twist = self.get_twist()
+      self.odom_publisher.publish(odom_msg)
+      self.rate.sleep()
+
+  def wheel_count_cb(self, data):
+    self.right_delta = data.right_wheel - self.right_count
+    self.left_delta = data.left_wheel - self.left_count
+    self.right_count = data.right_wheel
+    self.left_count = data.left_wheel
+    self.pos_accum += self.get_linear_displacement()
+    self.angle_accum += self.get_angle_displacement()
+    self.x += self.get_linear_displacement() * math.cos(self.get_angle_displacement())
+    self.y -= self.get_linear_displacement() * math.sin(self.get_angle_displacement())
+
+  def get_right_linear_distance(self):
+    return self.right_delta * self.RADIANS_PER_PULSE * self.WHEEL_DIAMETER
+
+  def get_left_linear_distance(self):
+    return self.left_delta * self.RADIANS_PER_PULSE * self.WHEEL_DIAMETER
+
+  def get_linear_displacement(self):
+    return (self.get_right_linear_distance() + self.get_left_linear_distance()) / 2.0
+
+  def get_angle_displacement(self):
+    dw = self.left_delta - self.right_delta
+    w = math.pi * self.WHEEL_DIAMETER * dw * self.RADIANS_PER_PULSE_X2 / self.WHEEL_AXIS_DISTANCE
+    return w
+
+  def get_linear_speed(self):
+    if abs(self.right_delta) > abs(self.left_delta):
+      v = self.get_right_linear_distance()
+    else:
+      v = self.get_left_linear_distance()
+    return v
+
+  def get_angular_speed(self):
+    dw = self.left_delta - self.right_delta
+    w = math.pi * self.WHEEL_DIAMETER * dw * self.RADIANS_PER_PULSE_X2 / self.WHEEL_AXIS_DISTANCE
+    return w
+
+  def get_twist(self):
+    twist_msg = TwistWithCovariance()
+    twist_msg.twist.linear.x = self.get_linear_speed()
+    twist_msg.twist.angular.z = self.get_angular_speed()
+    return twist_msg
+
+  def get_pose(self):
+    pose_msg = PoseWithCovariance()
+    covariance_matrix = -1.0 * np.identity(6)
+    covariance_matrix = covariance_matrix.flatten().tolist()
+    pose_msg.covariance = covariance_matrix
+    pose_msg.pose.position.x = self.x
+    pose_msg.pose.position.y = self.y
+    quaternion = transformations.quaternion_from_euler(0, 0, self.angle_accum)
+    pose_msg.pose.orientation.x = quaternion[0]
+    pose_msg.pose.orientation.y = quaternion[1]
+    pose_msg.pose.orientation.z = quaternion[2]
+    pose_msg.pose.orientation.w = quaternion[3]
+    return pose_msg
+
+
+if __name__ == '__main__':
+  rospy.init_node('odometry', anonymous=True)
+  node = OdometryNode()
+  node.run()
+
+
+
