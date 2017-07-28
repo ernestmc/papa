@@ -1,5 +1,6 @@
 <launch>
   <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find papa_description)/urdf/papa.urdf.xacro'" />
+  <arg name="use_odometry" default="false" />
   <param name="robot_description" command="$(arg urdf_file)" />
 
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
@@ -30,6 +31,6 @@
   </node>
 
 
-  <node pkg="papa_bringup" type="odom_node" name="odom_node" respawn="true" respawn_delay="30" />
+  <node pkg="papa_bringup" type="odom_node" name="odom_node" respawn="true" respawn_delay="30" if="$(arg use_odometry)"/>
 
 </launch>
