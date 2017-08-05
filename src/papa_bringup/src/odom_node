@@ -6,8 +6,8 @@ import numpy as np
 from tf import transformations
 
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
-from rosserial_mbed.msg import wheel_count
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
+from rosserial_mbed.msg import wheel_count, papa_imu
 
 # ROS main loop rate in hertz
 RATE = 10
@@ -23,7 +23,8 @@ class OdometryNode():
   def __init__(self):
     self.rate = rospy.Rate(RATE)
     self.odom_publisher = rospy.Publisher("/odom", Odometry, queue_size=10)
-    self.right_wheel_subscriber = rospy.Subscriber("/wheel_count", wheel_count, self.wheel_count_cb)
+    self.wheel_subscriber = rospy.Subscriber("/wheel_count", wheel_count, self.wheel_count_cb)
+    self.imu_subscriber = rospy.Subscriber("/papa_imu", papa_imu, self.imu_cb)
     self.rate = rospy.Rate(10)
     self.right_count = 0
     self.right_delta = 0
@@ -31,6 +32,7 @@ class OdometryNode():
     self.left_delta = 0
     self.pos_accum = 0
     self.angle_accum = 0
+    self.imu_angular_twist = Vector3()
     self.x = 0
     self.y = 0
 
@@ -54,6 +56,11 @@ class OdometryNode():
     self.angle_accum += self.get_angle_displacement()
     self.x += self.get_linear_displacement() * math.cos(self.get_angle_displacement())
     self.y -= self.get_linear_displacement() * math.sin(self.get_angle_displacement())
+
+  def imu_cb(self, data):
+    self.imu_angular_twist.x = data.gyro_x
+    self.imu_angular_twist.y = data.gyro_y
+    self.imu_angular_twist.z = data.gyro_z
 
   def get_right_linear_distance(self):
     return self.right_delta * self.RADIANS_PER_PULSE * self.WHEEL_DIAMETER
@@ -84,7 +91,8 @@ class OdometryNode():
   def get_twist(self):
     twist_msg = TwistWithCovariance()
     twist_msg.twist.linear.x = self.get_linear_speed()
-    twist_msg.twist.angular.z = self.get_angular_speed()
+    #twist_msg.twist.angular.z = self.get_angular_speed()
+    twist_msg.twist.angular = self.imu_angular_twist
     return twist_msg
 
   def get_pose(self):

@@ -12,6 +12,7 @@ add_message_files(FILES
                   Adc.msg
                   wheel_count.msg
                   papa_imu.msg
+                  papa_sonar.msg
                  )
 
 add_service_files(FILES
