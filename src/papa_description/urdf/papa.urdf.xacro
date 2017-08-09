@@ -3,7 +3,42 @@
 
   <!-- ArloBot -->
   <!-- There is no actual ArloBot model, I never made one. -->
+
   <xacro:include filename="$(find papa_description)/urdf/arlo.urdf.xacro"/>
+  <xacro:include filename="$(find turtlebot_description)/urdf/turtlebot_common_library.urdf.xacro" />
+  <xacro:include filename="$(find turtlebot_description)/urdf/stacks/hexagons.urdf.xacro"/>
+  <xacro:include filename="$(find turtlebot_description)/urdf/sensors/kinect.urdf.xacro"/>
+
+  <kobuki/>
+  <sensor_kinect  parent="base_link"/>
+
+  <joint name="right_sonar_base_link_joint" type="fixed">
+    <origin xyz="0.3 -0.08 0.10125" rpy="0 0 -0.610866667" />
+    <parent link="base_link"/>
+    <child link="right_sonar_link" />
+  </joint>
+
+  <link name="right_sonar_link">
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0 0 0.0" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.5" />
+    </inertial>
+  </link>
+
+  <joint name="left_sonar_base_link_joint" type="fixed">
+    <origin xyz="0.3 0.08 0.10125" rpy="0 0 0.610866667" />
+    <parent link="base_link"/>
+    <child link="left_sonar_link" />
+  </joint>
+
+  <link name="left_sonar_link">
+    <inertial>
+      <mass value="0.1" />
+      <origin xyz="0 0 0.0" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.5" />
+    </inertial>
+  </link>
 
   <arlo_base/>
 </robot>
