@@ -42,6 +42,9 @@
   <!-- Launch sonar publisher -->
   <node pkg="papa_bringup" type="sonar_publisher" name="sonar_publisher" />
 
+  <!-- Launch odometry publisher -->
+  <node pkg="papa_bringup" type="odom_node" name="odom_node" />
+
   <!-- Camera node -->
   <!-- <node pkg="papa_bringup" type="camera_node" name="camera_node" respawn="true" respawn_delay="30" /> -->
 
