@@ -1,12 +1,14 @@
 <launch>
   <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find papa_description)/urdf/papa.urdf.xacro'" />
-  <arg name="use_odometry" default="false" />
+  <arg name="kinect" default="false" />
+  <arg name="navigation" default="false" />
   <param name="robot_description" command="$(arg urdf_file)" />
-
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
-    <param name="publish_frequency" type="double" value="5.0" />
+    <param name="publish_frequency" type="double" value="100.0" />
   </node>
-
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher">
+    <param name="publish_frequency" type="double" value="100.0" />
+  </node>
   <!-- Bring up supervisor node. If after a given timeout no vels message is received set cmd_vel to zero -->
   <node pkg="papa_bringup" type="supervisor" name="supervisor" respawn="true" respawn_delay="30">
     <param name="input_topic" value="cmd_vel" />  	   <!-- Topic from which listen the velocities commands -->
@@ -15,22 +17,35 @@
     <param name="timeout" value="2.0" />                   <!-- Max time it will wait before publish zeros -->
   </node>
 
-
   <!-- Bring up serial interface for the arduino -->
   <group ns="arduino">
-    <node pkg="rosserial_python" type="serial_node.py" name="rosserial" respawn="true" respawn_delay="30">
-      <param name="port" value="/dev/ttyACM0"/>
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial_arduino" respawn="true" respawn_delay="30">
+      <param name="port" value="/dev/serial/by-id/usb-Arduino_LLC_Arduino_Leonardo-if00"/>
     </node>
   </group>
 
+  <!-- Bring up serial interface for the mbed -->
+  <group ns="mbed">
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial_mbed" respawn="true" respawn_delay="30">
+      <param name="port" value="/dev/serial/by-id/usb-mbed_Microcontroller_101000000000000000000002F7F07610-if01"/>
+    </node>
+  </group>
+
+  <group if="$(arg kinect)">
+    <include file="$(find papa_bringup)/launch/3dsensor.launch" />
+  </group>
+
+  <group if="$(arg navigation)">
+    <include file="$(find papa_navigation)/launch/amcl_demo.launch" />
+  </group>
+
+  <!-- Launch sonar publisher -->
+  <node pkg="papa_bringup" type="sonar_publisher" name="sonar_publisher" />
+
+  <!-- Launch odometry publisher -->
+  <node pkg="papa_bringup" type="odom_node" name="odom_node" />
+
   <!-- Camera node -->
   <!-- <node pkg="papa_bringup" type="camera_node" name="camera_node" respawn="true" respawn_delay="30" /> -->
-  
-  <node pkg="rosserial_python" type="serial_node.py" name="rosserial1" respawn="true" respawn_delay="30">
-    <param name="port" value="/dev/ttyACM1"/>
-  </node>
-
-
-  <node pkg="papa_bringup" type="odom_node" name="odom_node" respawn="true" respawn_delay="30" if="$(arg use_odometry)"/>
 
 </launch>

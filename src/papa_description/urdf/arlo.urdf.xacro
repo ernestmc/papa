@@ -64,6 +64,15 @@
       </collision>
     </link>
 
+    <joint name="base_device_joint" type="fixed">
+      <origin xyz="0.10 0 0.10" rpy="0 0 0" />
+      <parent link="base_link"/>
+      <child link="device" />
+    </joint>
+
+    <link name="device">
+    </link>
+
     <link name="front_caster_link">
       <inertial>
         <mass value="0.001" />
