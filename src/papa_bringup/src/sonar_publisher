@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+import rospy
+from sensor_msgs.msg import Range
+import math
+from rosserial_mbed.msg import papa_sonar
+
+range_left_pub = rospy.Publisher('range_left', Range, queue_size=10)
+range_right_pub = rospy.Publisher('range_right', Range, queue_size=10)
+
+RANGE_MAX = 3.0
+RANGE_MIN = 0.03
+FOV = 15.0 * math.pi / 180.0
+
+SONAR_LEFT_ID = 1
+SONAR_RIGHT_ID = 0
+
+
+def sonar_callback(data):
+    # Create Range message
+    sonar_msg = Range()
+    sonar_msg.header.stamp = rospy.Time.now()
+    sonar_msg.min_range = RANGE_MIN
+    sonar_msg.max_range = RANGE_MAX
+    sonar_msg.field_of_view = FOV
+
+    # Publish on right and left sonar
+    sonar_msg.header.frame_id = 'right_sonar_link'
+    sonar_msg.range = data.ranges[SONAR_RIGHT_ID]/1000.0
+    range_right_pub.publish(sonar_msg)
+    sonar_msg.header.frame_id = 'left_sonar_link'
+    sonar_msg.range = data.ranges[SONAR_LEFT_ID]/1000.0
+    print sonar_msg.range
+    range_left_pub.publish(sonar_msg)
+
+if __name__== "__main__":
+
+    # ROS init name                                                                                                                                                 
+    rospy.init_node('sonar_publisher')
+
+    # Subscribe to sonar topics
+    rospy.Subscriber("/mbed/papa_sonar", papa_sonar, sonar_callback) 
+
+    rospy.spin()
+
+
