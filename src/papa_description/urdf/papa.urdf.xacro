@@ -6,11 +6,8 @@
 
   <xacro:include filename="$(find papa_description)/urdf/arlo.urdf.xacro"/>
   <xacro:include filename="$(find turtlebot_description)/urdf/turtlebot_common_library.urdf.xacro" />
-  <xacro:include filename="$(find turtlebot_description)/urdf/stacks/hexagons.urdf.xacro"/>
-  <xacro:include filename="$(find turtlebot_description)/urdf/sensors/kinect.urdf.xacro"/>
 
-  <kobuki/>
-  <sensor_kinect  parent="base_link"/>
+  <!-- Sonar links -->
 
   <joint name="right_sonar_base_link_joint" type="fixed">
     <origin xyz="0.3 -0.08 0.10125" rpy="0 0 -0.610866667" />
@@ -37,6 +34,62 @@
       <mass value="0.1" />
       <origin xyz="0 0 0.0" />
       <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.5" />
+    </inertial>
+  </link>
+
+  <!-- Kinect links -->
+
+  <joint name="camera_link_base_link_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.10125" rpy="0 0 0" />
+    <parent link="base_link"/>
+    <child link="camera_link" />
+  </joint>
+
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <box size="0.064 0.121 0.0381" />
+      </geometry>
+      <material name="Blue" />
+    </visual>
+    <inertial>
+      <mass value="0.0001" />
+      <origin xyz="0 0 0" />
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
+               iyy="0.0001" iyz="0.0" 
+               izz="0.0001" />
+    </inertial>
+  </link>
+
+  <joint name="camera_depth_joint" type="fixed">
+    <origin xyz="0 0.028 0" rpy="0 0 0" />
+    <parent link="camera_link" />
+    <child link="camera_depth_frame" />
+  </joint>
+
+  <link name="camera_depth_frame">
+    <inertial>
+        <mass value="0.0001" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
+               iyy="0.0001" iyz="0.0" 
+               izz="0.0001" />
+    </inertial>
+  </link>
+
+  <joint name="depth_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="${-M_PI/2} 0 ${-M_PI/2}" />
+    <parent link="camera_depth_frame" />
+    <child link="camera_depth_optical_frame" />
+  </joint>
+
+  <link name="camera_depth_optical_frame">
+    <inertial>
+        <mass value="0.0001" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
+                 iyy="0.0001" iyz="0.0" 
+                 izz="0.0001" />
     </inertial>
   </link>
 

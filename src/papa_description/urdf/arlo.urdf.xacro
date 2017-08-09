@@ -33,6 +33,11 @@
         </geometry>
         <material name="Green" />
       </visual>
+      <inertial>
+        <mass value="0.1" />
+        <origin xyz="0 0 0.0" />
+        <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.5" />
+      </inertial>
     </link>
 
     <joint name="base_footprint_joint" type="fixed">
@@ -62,15 +67,6 @@
           <cylinder length="0.0095" radius="0.2245"/>
         </geometry>
       </collision>
-    </link>
-
-    <joint name="base_device_joint" type="fixed">
-      <origin xyz="0.10 0 0.10" rpy="0 0 0" />
-      <parent link="base_link"/>
-      <child link="device" />
-    </joint>
-
-    <link name="device">
     </link>
 
     <link name="front_caster_link">

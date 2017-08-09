@@ -3,12 +3,14 @@
   <arg name="kinect" default="false" />
   <arg name="navigation" default="false" />
   <param name="robot_description" command="$(arg urdf_file)" />
+
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="100.0" />
   </node>
   <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher">
     <param name="publish_frequency" type="double" value="100.0" />
   </node>
+
   <!-- Bring up supervisor node. If after a given timeout no vels message is received set cmd_vel to zero -->
   <node pkg="papa_bringup" type="supervisor" name="supervisor" respawn="true" respawn_delay="30">
     <param name="input_topic" value="cmd_vel" />  	   <!-- Topic from which listen the velocities commands -->
@@ -34,6 +36,9 @@
   <group if="$(arg kinect)">
     <include file="$(find papa_bringup)/launch/3dsensor.launch" />
   </group>
+
+  <!-- Remap kinect RGB image -->
+  <remap from="/camera/rgb/image_color/compressed" to="/compressed_image"/>
 
   <group if="$(arg navigation)">
     <include file="$(find papa_navigation)/launch/amcl_demo.launch" />
