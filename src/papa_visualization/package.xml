@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>papa_visualization</name>
+  <version>1.0.0</version>
+  <description> RViz visualization for papa robot</description>
+
+  <maintainer email="jchoclin@gmail.com">Javier Choclin</maintainer>
+
+  <license>BSD</license>
+
+  <run_depend>rviz</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+
+</package>
