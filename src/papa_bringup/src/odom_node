@@ -6,8 +6,10 @@ import numpy as np
 from tf import transformations
 
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3, Twist
 from rosserial_mbed.msg import wheel_count, papa_imu
+from geometry_msgs.msg import TransformStamped
+import tf2_ros
 
 # ROS main loop rate in hertz
 RATE = 10
@@ -23,6 +25,7 @@ class Integrator(object):
       self.last_timestamp = timestamp
     else:
       dt = timestamp - self.last_timestamp
+      self.last_timestamp = timestamp
       self.sum += new_value * dt
       if dt < 0:
         rospy.logwarn("Integrating with negative time delta!")
@@ -45,18 +48,21 @@ class OdometryNode(object):
   def __init__(self):
     self.rate = rospy.Rate(RATE)
     self.odom_publisher = rospy.Publisher("/odom", Odometry, queue_size=10)
-    self.wheel_subscriber = rospy.Subscriber("/wheel_count", wheel_count, self.wheel_count_cb)
-    self.imu_subscriber = rospy.Subscriber("/papa_imu", papa_imu, self.imu_cb)
+    self.wheel_subscriber = rospy.Subscriber("/mbed/wheel_count", wheel_count, self.wheel_count_cb)
+    self.imu_subscriber = rospy.Subscriber("/mbed/papa_imu", papa_imu, self.imu_cb)
+    self.vel_subscriber = rospy.Subscriber("/cmd_vel", Twist, self.vel_cb)
+    self.tf_pub = tf2_ros.TransformBroadcaster()
     self.rate = rospy.Rate(10)
-    self.right_count = 0
+    self.right_count = None
     self.right_delta = 0
-    self.left_count = 0
+    self.left_count = None
     self.left_delta = 0
     self.pos_accum = 0
     self.angle_accum = 0
     self.imu_angular_twist = Vector3()
     self.x = 0
     self.y = 0
+    self.last_vel_twist = Twist()
     self.wx_integrator = Integrator()
     self.wy_integrator = Integrator()
     self.wz_integrator = Integrator()
@@ -70,34 +76,57 @@ class OdometryNode(object):
       odom_msg.pose = self.get_pose()
       odom_msg.twist = self.get_twist()
       self.odom_publisher.publish(odom_msg)
+      self.publish_tf()
       self.rate.sleep()
 
   def wheel_count_cb(self, data):
-    self.right_delta = data.right_wheel - self.right_count
-    self.left_delta = data.left_wheel - self.left_count
-    self.right_count = data.right_wheel
-    self.left_count = data.left_wheel
-    self.pos_accum += self.get_linear_displacement()
-    self.angle_accum += self.get_angle_displacement()
-    self.x += self.get_linear_displacement() * math.cos(self.get_angle_displacement())
-    self.y -= self.get_linear_displacement() * math.sin(self.get_angle_displacement())
+    if self.right_count is None or self.left_count is None:
+      self.right_count = data.right_wheel
+      self.left_count = data.left_wheel
+    else:
+      self.right_delta = data.right_wheel - self.right_count
+      self.left_delta = data.left_wheel - self.left_count
+      self.right_count = data.right_wheel
+      self.left_count = data.left_wheel
+      self.pos_accum += self.get_linear_displacement()
+      self.angle_accum += self.get_angle_displacement()
+      self.x += self.get_linear_displacement() * math.cos(self.get_yaw_angle())
+      self.y += self.get_linear_displacement() * math.sin(self.get_yaw_angle())
 
   def imu_cb(self, data):
     self.imu_angular_twist.x = data.gyro_x
     self.imu_angular_twist.y = data.gyro_y
     self.imu_angular_twist.z = data.gyro_z
-    self.wx_integrator.add(data.gyro_x)
-    self.wy_integrator.add(data.gyro_y)
-    self.wz_integrator.add(data.gyro_z)
+    timestamp = rospy.Time.now().to_sec()
+    self.wx_integrator.add(data.gyro_x * math.pi / 180, timestamp)
+    self.wy_integrator.add(data.gyro_y * math.pi / 180, timestamp)
+    self.wz_integrator.add(data.gyro_z * math.pi / 180, timestamp)
+
+  def vel_cb(self, data):
+    self.last_vel_twist = data
+
+  def get_sign(self, val):
+    if val != 0:
+      return val / math.fabs(val)
+    else:
+      return 1.0
 
   def get_right_linear_distance(self):
-    return self.right_delta * self.RADIANS_PER_PULSE * self.WHEEL_DIAMETER
+    sign = self.get_sign(self.last_vel_twist.linear.x + self.last_vel_twist.angular.z)
+    dist = self.right_delta * self.RADIANS_PER_PULSE * self.WHEEL_DIAMETER
+    return dist * sign
 
   def get_left_linear_distance(self):
-    return self.left_delta * self.RADIANS_PER_PULSE * self.WHEEL_DIAMETER
+    sign = self.get_sign(self.last_vel_twist.linear.x - self.last_vel_twist.angular.z)
+    dist = self.left_delta * self.RADIANS_PER_PULSE * self.WHEEL_DIAMETER
+    return dist * sign
 
   def get_linear_displacement(self):
-    return (self.get_right_linear_distance() + self.get_left_linear_distance()) / 2.0
+    if self.get_right_linear_distance() < self.get_left_linear_distance():
+      dist = self.get_right_linear_distance()
+    else:
+      dist = self.get_left_linear_distance()
+    return dist
 
   def get_angle_displacement(self):
     dw = self.left_delta - self.right_delta
@@ -116,6 +145,9 @@ class OdometryNode(object):
     w = math.pi * self.WHEEL_DIAMETER * dw * self.RADIANS_PER_PULSE_X2 / self.WHEEL_AXIS_DISTANCE
     return w
 
+  def get_yaw_angle(self):
+    return self.wz_integrator.get_sum()
+
   def get_twist(self):
     twist_msg = TwistWithCovariance()
     twist_msg.twist.linear.x = self.get_linear_speed()
@@ -133,12 +165,21 @@ class OdometryNode(object):
     wx = self.wx_integrator.get_sum()
     wy = self.wy_integrator.get_sum()
     wz = self.wz_integrator.get_sum()
-    quaternion = transformations.quaternion_from_euler(wx, wy, wz)
+    quaternion = transformations.quaternion_from_euler(0, 0, wz)
     pose_msg.pose.orientation.x = quaternion[0]
     pose_msg.pose.orientation.y = quaternion[1]
     pose_msg.pose.orientation.z = quaternion[2]
     pose_msg.pose.orientation.w = quaternion[3]
     return pose_msg
+
+  def publish_tf(self):
+    tf_odom_map = TransformStamped()
+    tf_odom_map.header.frame_id = 'map'
+    tf_odom_map.child_frame_id = 'base_link'
+    tf_odom_map.header.stamp = rospy.Time.now()
+    tf_odom_map.transform.translation = self.get_pose().pose.position
+    tf_odom_map.transform.rotation = self.get_pose().pose.orientation
+    self.tf_pub.sendTransform(tf_odom_map)
 
 
 if __name__ == '__main__':
